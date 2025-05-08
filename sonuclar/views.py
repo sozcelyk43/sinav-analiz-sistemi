@@ -1,12 +1,11 @@
-from django.shortcuts import render
-from django.db.models import Sum # Toplama işlemi için
-from .forms import OgrenciAnalizFormu
-from .models import Sonuc, Ders, Ogrenci, Sinav # Gerekli modelleri import ediyoruz
-import json # Şablona JSON verisi göndermek için
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required # Giriş zorunluluğu için
+from django.db.models import Sum
+from .forms import OgrenciAnalizFormu # Güncellenmiş formu import ediyoruz
+from .models import Sonuc, Ders, Ogrenci, Sinav
+import json
 
-# Derslerin sabit bir listesini tanımlayalım (grafiklerde bu sırayla gösterilecek)
-# Bu liste, DERS_BILGILERI (admin.py'deki) ile tutarlı olmalı veya oradan alınmalı.
-# Şimdilik burada elle tanımlayalım.
+# Grafiklerde derslerin gösterileceği sabit sıra
 DERS_ADLARI_SIRALI = [
     "Türkçe",
     "Matematik",
@@ -16,39 +15,59 @@ DERS_ADLARI_SIRALI = [
     "Din Kültürü"
 ]
 
+@login_required # Bu view fonksiyonuna erişim için kullanıcının giriş yapmış olması gerekir.
 def ogrenci_analiz_view(request):
     """
-    Öğrenci bazlı, tarih aralığına göre sınav sonuçlarını
-    ve ders bazlı pasta grafiklerini gösteren view.
+    Giriş yapmış öğrenci için, belirtilen tarih aralığındaki sınav sonuçlarını
+    ve ders bazlı pasta grafiklerini gösterir.
     """
+    ogrenci_nesnesi = None
+    try:
+        # Giriş yapan kullanıcıya (request.user) bağlı Ogrenci nesnesini al.
+        # Ogrenci modelindeki 'user' alanının OneToOneField(User, ...) olduğunu varsayıyoruz.
+        ogrenci_nesnesi = Ogrenci.objects.get(user=request.user)
+    except Ogrenci.DoesNotExist:
+        # Eğer giriş yapan kullanıcıya bağlı bir Ogrenci profili yoksa,
+        # bu durumu şablonda ele almak üzere bir işaretçi ayarla.
+        # Bu senaryo, her User'ın bir Ogrenci profiline düzgün şekilde bağlanması durumunda oluşmamalıdır.
+        context = {
+            'form': OgrenciAnalizFormu(), # Formu yine de şablona gönder
+            'ogrenci_profili_yok': True,
+            'analiz_verileri_json': None, # Hata durumunda bu değişkenlerin None olmasını sağla
+            'analiz_verileri': None,
+            'secilen_ogrenci_adi': None,
+            'ders_etiketleri': json.dumps(["Doğru", "Yanlış", "Boş"])
+        }
+        return render(request, 'sonuclar/ogrenci_analiz_sayfasi.html', context)
+
+    # Formu POST verisiyle (eğer varsa) veya boş olarak başlat
     form = OgrenciAnalizFormu(request.POST or None)
-    analiz_verileri = None # Grafik verilerini tutacak
-    secilen_ogrenci_adi = None
+    analiz_verileri = None
+    analiz_verileri_json = None
+    # Öğrenci adını doğrudan alınan Ogrenci nesnesinden al
+    secilen_ogrenci_adi = ogrenci_nesnesi.ad_soyad if ogrenci_nesnesi else (request.user.get_full_name() or request.user.username)
 
     if request.method == 'POST' and form.is_valid():
-        ogrenci = form.cleaned_data['ogrenci']
         baslangic_tarihi = form.cleaned_data['baslangic_tarihi']
         bitis_tarihi = form.cleaned_data['bitis_tarihi']
-        secilen_ogrenci_adi = ogrenci.ad_soyad
 
-        # Belirtilen öğrenci ve tarih aralığındaki sınavları filtrele
-        # Sinav modelinde 'tarih' alanı olduğunu varsayıyoruz.
+        # Belirtilen tarih aralığındaki sınavları filtrele
         gecerli_sinavlar = Sinav.objects.filter(
             tarih__gte=baslangic_tarihi,
             tarih__lte=bitis_tarihi
         )
 
-        # Bu sınavlara ait, seçilen öğrencinin sonuçlarını çek
+        # Sadece giriş yapmış öğrencinin (ogrenci_nesnesi) sonuçlarını çek
         sonuclar_query = Sonuc.objects.filter(
-            ogrenci=ogrenci,
+            ogrenci=ogrenci_nesnesi,
             sinav__in=gecerli_sinavlar
         )
 
         ders_bazli_sonuclar = {}
-        # DERS_ADLARI_SIRALI listesindeki her ders için veri topla
         for ders_adi in DERS_ADLARI_SIRALI:
             try:
-                ders_obj = Ders.objects.get(ad=ders_adi) # Ders objesini adıyla bul
+                # Veritabanından Ders nesnesini adıyla bul
+                ders_obj = Ders.objects.get(ad=ders_adi)
                 # O derse ait sonuçları filtrele ve doğru, yanlış, boş sayılarını topla
                 toplamlar = sonuclar_query.filter(ders=ders_obj).aggregate(
                     toplam_dogru=Sum('dogru_sayisi'),
@@ -56,12 +75,12 @@ def ogrenci_analiz_view(request):
                     toplam_bos=Sum('bos_sayisi')
                 )
                 
-                # Eğer o ders için hiç sonuç yoksa toplamlar None olabilir, 0 yapalım.
+                # Toplamlar None ise (o ders için sonuç yoksa) 0 olarak ayarla
                 dogru = toplamlar['toplam_dogru'] if toplamlar['toplam_dogru'] is not None else 0
                 yanlis = toplamlar['toplam_yanlis'] if toplamlar['toplam_yanlis'] is not None else 0
                 bos = toplamlar['toplam_bos'] if toplamlar['toplam_bos'] is not None else 0
 
-                # Sadece anlamlı veri varsa (en az bir doğru, yanlış veya boş varsa) ekle
+                # Sadece anlamlı veri varsa (en az bir doğru, yanlış veya boş varsa) sözlüğe ekle
                 if dogru > 0 or yanlis > 0 or bos > 0:
                     ders_bazli_sonuclar[ders_adi] = {
                         'dogru': dogru,
@@ -69,32 +88,28 @@ def ogrenci_analiz_view(request):
                         'bos': bos,
                     }
             except Ders.DoesNotExist:
-                # Eğer DERS_ADLARI_SIRALI listesindeki bir ders DB'de yoksa, bu dersi atla
-                # Ya da bir uyarı loglayabilirsiniz.
+                # DERS_ADLARI_SIRALI listesindeki bir ders veritabanında yoksa, bu dersi atla.
+                # İsteğe bağlı olarak burada bir uyarı loglanabilir.
                 pass 
         
         if ders_bazli_sonuclar:
             analiz_verileri = ders_bazli_sonuclar
-            # Chart.js için veriyi JSON formatına çevirelim (şablonda kullanılacak)
-            # Sadece grafik için gerekli olan kısmı JSON yapalım
-            grafik_verisi_json = {}
-            for ders, toplamlar in analiz_verileri.items():
-                 grafik_verisi_json[ders] = [toplamlar['dogru'], toplamlar['yanlis'], toplamlar['bos']]
-            
+            # Chart.js için grafik verisini JSON formatına hazırla
+            grafik_verisi_json_hazirla = {}
+            for ders, toplam_degerleri in analiz_verileri.items():
+                 grafik_verisi_json_hazirla[ders] = [toplam_degerleri['dogru'], toplam_degerleri['yanlis'], toplam_degerleri['bos']]
             # Şablona göndermek için JSON string'e çevir
-            analiz_verileri_json = json.dumps(grafik_verisi_json)
-
+            analiz_verileri_json = json.dumps(grafik_verisi_json_hazirla)
 
     context = {
         'form': form,
-        'analiz_verileri': analiz_verileri, # Ham veri (tablo vb. için)
-        'analiz_verileri_json': analiz_verileri_json if 'analiz_verileri_json' in locals() else None, # Grafik için JSON string
+        'analiz_verileri': analiz_verileri,
+        'analiz_verileri_json': analiz_verileri_json,
         'secilen_ogrenci_adi': secilen_ogrenci_adi,
-        'ders_etiketleri': json.dumps(["Doğru", "Yanlış", "Boş"]) # Tüm grafikler için ortak etiketler
+        'ders_etiketleri': json.dumps(["Doğru", "Yanlış", "Boş"]),
+        'ogrenci_profili_yok': False # Eğer bu noktaya gelinmişse profil var demektir.
     }
     return render(request, 'sonuclar/ogrenci_analiz_sayfasi.html', context)
-
-# sonuclar/views.py dosyasının sonuna ekleyin
 
 def ana_sayfa_view(request):
     """
