@@ -1,0 +1,52 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}{{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a> &rsaquo;
+        <a href="{% url 'admin:app_list' app_label='sonuclar' %}">Sonuclar</a> &rsaquo; {# app_label model._meta.app_label ile aynı olmalı #}
+        <a href="{% url 'admin:sonuclar_sonuc_changelist' %}">Sınav Sonuçları</a> &rsaquo;
+        {{ title }}
+    </div>
+{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <div id="content-main">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div>
+                {% if form.errors %}
+                    <p class="errornote">
+                    {% if form.errors.items|length == 1 %}{% translate "Please correct the error below." %}{% else %}{% translate "Please correct the errors below." %}{% endif %}
+                    </p>
+                {% endif %}
+
+                <fieldset class="module aligned">
+                    {% for field in form %}
+                        <div class="form-row field-{{ field.name }}">
+                            {{ field.errors }}
+                            <div class="flex-container">
+                                {{ field.label_tag }}
+                                {{ field }}
+                            </div>
+                            {% if field.help_text %}
+                                <div class="help">{{ field.help_text|safe }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </fieldset>
+
+                <div class="submit-row">
+                    <input type="submit" value="{% translate 'Yükle' %}" class="default">
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+```
+* **Açıklama:** Bu şablon, standart Django admin arayüzüne benzer bir sayfa oluşturur. Formu, hataları ve bir "Yükle" butonu gösterir.

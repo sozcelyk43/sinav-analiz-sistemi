@@ -1,0 +1,78 @@
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sınav Sistemi Ana Sayfa</title>
+        <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                background-color: #e9ecef;
+                color: #343a40;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            }
+            .container {
+                text-align: center;
+                background-color: #fff;
+                padding: 40px;
+                border-radius: 12px;
+                box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            }
+            h1 {
+                color: #007bff;
+                margin-bottom: 1.5rem;
+                font-weight: 500;
+            }
+            .lead {
+                font-size: 1.15rem;
+                margin-bottom: 2.5rem;
+                color: #495057;
+            }
+            .btn-custom {
+                font-size: 1.25rem;
+                padding: 0.8rem 2rem;
+                border-radius: 8px;
+                transition: background-color 0.3s ease, transform 0.2s ease;
+            }
+            .btn-custom:hover {
+                background-color: #0056b3;
+                transform: translateY(-2px);
+            }
+            .admin-link {
+                margin-top: 3rem;
+                font-size: 0.9rem;
+                color: #6c757d;
+            }
+            .admin-link a {
+                color: #007bff;
+                text-decoration: none;
+            }
+            .admin-link a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Sınav Sonuç Analiz Sistemine Hoş Geldiniz</h1>
+            <p class="lead">Öğrencilerinizin sınav performanslarını ders bazında ve tarih aralığına göre detaylı bir şekilde analiz edin.</p>
+            
+            <a href="{% url 'sonuclar:ogrenci_analiz_sayfasi' %}" class="btn btn-primary btn-lg btn-custom">
+                Öğrenci Analiz Sayfasına Git
+            </a>
+            
+            <p class="admin-link">
+                Yöneticiyseniz, <a href="{% url 'admin:index' %}">admin paneline buradan</a> ulaşabilirsiniz.
+            </p>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    </body>
+    </html>
+    

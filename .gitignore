@@ -1,0 +1,30 @@
+    # Sanal ortam
+    venv/
+    */venv/
+    env/
+    */env/
+    .env
+    */.env
+
+    # Python cache
+    __pycache__/
+    *.py[cod]
+    *$py.class
+
+    # Django SQLite veritabanı (Render'da PostgreSQL kullanacağız)
+    db.sqlite3
+    *.sqlite3
+
+    # IDE ve OS dosyaları
+    .vscode/
+    .idea/
+    *.DS_Store
+    Thumbs.db
+
+    # Statik dosyalar (Render'da farklı yönetilecek)
+    # staticfiles/ # Eğer collectstatic ile buraya topluyorsanız ve repo'da istemiyorsanız
+    # media/ # Eğer kullanıcı medya dosyaları yüklüyorsa
+
+    # secrets.json veya .env gibi hassas bilgileri içeren dosyalar
+    # Eğer SECRET_KEY gibi bilgileri ayrı bir dosyada tutuyorsanız buraya ekleyin
+    
