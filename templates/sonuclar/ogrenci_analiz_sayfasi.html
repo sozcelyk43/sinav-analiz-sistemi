@@ -10,14 +10,26 @@
     <style>
         body {
             font-family: sans-serif;
-            padding: 20px;
+            padding-top: 70px; /* Navbar için boşluk */
             background-color: #f4f7f6;
+        }
+        .navbar-custom {
+            background-color: #007bff;
+        }
+        .navbar-custom .navbar-brand,
+        .navbar-custom .nav-link {
+            color: #fff;
+        }
+        .navbar-custom .nav-link:hover {
+            color: #d4d4d4;
         }
         .container {
             background-color: #fff;
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            margin-top: 20px; /* Navbar ile içerik arasına boşluk */
+            margin-bottom: 20px; /* Alt boşluk */
         }
         h1, h2 {
             color: #333;
@@ -29,8 +41,8 @@
         }
         .chart-container {
             width: 100%;
-            max-width: 400px; /* Pasta grafik boyutu */
-            margin: 20px auto; /* Ortalamak için */
+            max-width: 400px;
+            margin: 20px auto;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -38,152 +50,164 @@
         }
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Responsive grid */
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
             margin-top: 30px;
         }
-        .alert-info {
+        .alert-info, .alert-warning {
             text-align: center;
         }
         .btn-primary {
             background-color: #007bff;
             border-color: #007bff;
         }
+        /* Navbar toggler icon rengi için */
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255, 255, 255, 0.8)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'ana_sayfa' %}">Sınav Analiz Sistemi</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="navbar-text text-white mr-3">Hoşgeldin, {{ user.username }}!</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}?next={% url 'ana_sayfa' %}">Çıkış Yap</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                             <a class="nav-link" href="{% url 'login' %}?next={{ request.path }}">Giriş Yap</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
         <h1>Öğrenci Sınav Analizi</h1>
 
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    {{ form.ogrenci.label_tag }}
-                    {{ form.ogrenci }}
-                    {% if form.ogrenci.errors %}
-                        <div class="invalid-feedback d-block">
-                            {% for error in form.ogrenci.errors %}{{ error }}{% endfor %}
-                        </div>
-                    {% endif %}
+        {% if user.is_authenticated %} {# Sadece giriş yapmış kullanıcılar formu ve sonuçları görebilir #}
+            <form method="post">
+                {% csrf_token %}
+                {# Öğrenci seçme alanı kaldırılacak, view tarafında giriş yapan kullanıcı otomatik olarak alınacak #}
+                {# Bu formda sadece tarih aralığı olacak #}
+                
+                <div class="form-row">
+                    <div class="form-group col-md-5">
+                        {{ form.baslangic_tarihi.label_tag }}
+                        {{ form.baslangic_tarihi }}
+                        {% if form.baslangic_tarihi.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.baslangic_tarihi.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-5">
+                        {{ form.bitis_tarihi.label_tag }}
+                        {{ form.bitis_tarihi }}
+                        {% if form.bitis_tarihi.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.bitis_tarihi.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-2 align-self-end">
+                        <button type="submit" class="btn btn-primary btn-block">Analiz Et</button>
+                    </div>
                 </div>
-                <div class="form-group col-md-3">
-                    {{ form.baslangic_tarihi.label_tag }}
-                    {{ form.baslangic_tarihi }}
-                    {% if form.baslangic_tarihi.errors %}
-                        <div class="invalid-feedback d-block">
-                            {% for error in form.baslangic_tarihi.errors %}{{ error }}{% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="form-group col-md-3">
-                    {{ form.bitis_tarihi.label_tag }}
-                    {{ form.bitis_tarihi }}
-                    {% if form.bitis_tarihi.errors %}
-                        <div class="invalid-feedback d-block">
-                            {% for error in form.bitis_tarihi.errors %}{{ error }}{% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="form-group col-md-2 align-self-end">
-                    <button type="submit" class="btn btn-primary btn-block">Analiz Et</button>
-                </div>
-            </div>
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger">
-                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
-                </div>
-            {% endif %}
-        </form>
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </form>
 
-        {% if analiz_verileri_json %}
-            <hr>
-            <h2>{{ secilen_ogrenci_adi }} için Analiz Sonuçları</h2>
-            <p class="text-center">Seçilen tarih aralığındaki denemeler için ders bazlı Doğru/Yanlış/Boş dağılımları.</p>
-            
-            <div class="charts-grid">
-                {% for ders_adi, veriler in analiz_verileri.items %} 
-                <div class="chart-container">
-                    <h5 class="text-center">{{ ders_adi }}</h5>
-                    <canvas id="chart-{{ forloop.counter }}"></canvas>
+            {% if analiz_verileri_json %}
+                <hr>
+                {# secilen_ogrenci_adi view'dan gelmiyorsa user.get_full_name veya user.username kullanılabilir #}
+                <h2>{% if secilen_ogrenci_adi %}{{ secilen_ogrenci_adi }}{% else %}{{ user.username }}{% endif %} için Analiz Sonuçları</h2>
+                <p class="text-center">Seçilen tarih aralığındaki denemeler için ders bazlı Doğru/Yanlış/Boş dağılımları.</p>
+                
+                <div class="charts-grid">
+                    {% for ders_adi, veriler in analiz_verileri.items %} 
+                    <div class="chart-container">
+                        <h5 class="text-center">{{ ders_adi }}</h5>
+                        <canvas id="chart-{{ forloop.counter }}"></canvas>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
 
-            <script>
-                // Chart.js eklentisini kaydet
-                Chart.register(ChartDataLabels);
-
-                document.addEventListener('DOMContentLoaded', function() {
-                    const analizVerileriGrafik = JSON.parse('{{ analiz_verileri_json|escapejs }}');
-                    const dersEtiketleri = JSON.parse('{{ ders_etiketleri|escapejs }}');
-                    const chartColors = ['#28a745', '#dc3545', '#ffc107'];
-                    
-                    let chartCounter = 1;
-                    for (const dersAdi in analizVerileriGrafik) {
-                        if (analizVerileriGrafik.hasOwnProperty(dersAdi)) {
-                            const ctx = document.getElementById('chart-' + chartCounter).getContext('2d');
-                            new Chart(ctx, {
-                                type: 'pie',
-                                data: {
-                                    labels: dersEtiketleri,
-                                    datasets: [{
-                                        label: dersAdi + ' Dağılımı',
-                                        data: analizVerileriGrafik[dersAdi],
-                                        backgroundColor: chartColors,
-                                        borderColor: '#fff',
-                                        borderWidth: 1
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: true,
-                                    plugins: {
-                                        legend: {
-                                            position: 'top',
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                label: function(tooltipItem) {
-                                                    let sum = tooltipItem.dataset.data.reduce((a, b) => a + b, 0);
-                                                    let percentage = (tooltipItem.raw / sum * 100).toFixed(2) + '%';
-                                                    return tooltipItem.label + ': ' + tooltipItem.raw + ' (' + percentage + ')';
+                <script>
+                    Chart.register(ChartDataLabels);
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const analizVerileriGrafik = JSON.parse('{{ analiz_verileri_json|escapejs }}');
+                        const dersEtiketleri = JSON.parse('{{ ders_etiketleri|escapejs }}');
+                        const chartColors = ['#28a745', '#dc3545', '#ffc107'];
+                        
+                        let chartCounter = 1;
+                        for (const dersAdi in analizVerileriGrafik) {
+                            if (analizVerileriGrafik.hasOwnProperty(dersAdi)) {
+                                const ctx = document.getElementById('chart-' + chartCounter).getContext('2d');
+                                new Chart(ctx, {
+                                    type: 'pie',
+                                    data: {
+                                        labels: dersEtiketleri,
+                                        datasets: [{
+                                            label: dersAdi + ' Dağılımı',
+                                            data: analizVerileriGrafik[dersAdi],
+                                            backgroundColor: chartColors,
+                                            borderColor: '#fff',
+                                            borderWidth: 1
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: true,
+                                        plugins: {
+                                            legend: { position: 'top', },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(tooltipItem) {
+                                                        let sum = tooltipItem.dataset.data.reduce((a, b) => a + b, 0);
+                                                        let percentage = (tooltipItem.raw / sum * 100).toFixed(2) + '%';
+                                                        return tooltipItem.label + ': ' + tooltipItem.raw + ' (' + percentage + ')';
+                                                    }
                                                 }
+                                            },
+                                            datalabels: {
+                                                formatter: (value, context) => { return value > 0 ? value : ''; },
+                                                color: '#fff',
+                                                font: { weight: 'bold', size: 14, },
+                                                anchor: 'center',
+                                                align: 'center',
                                             }
-                                        },
-                                        // Veri etiketleri eklentisi için ayarlar
-                                        datalabels: {
-                                            formatter: (value, context) => {
-                                                // Sadece değeri (sayıyı) göster
-                                                // Eğer dilim çok küçükse etiketi gizleyebiliriz (isteğe bağlı)
-                                                // let sum = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                // let percentage = (value / sum * 100);
-                                                // if (percentage < 5) return null; // %5'ten küçükse gösterme
-                                                return value > 0 ? value : ''; // Değer 0 ise gösterme
-                                            },
-                                            color: '#fff', // Etiket rengi
-                                            font: {
-                                                weight: 'bold',
-                                                size: 14,
-                                            },
-                                            // Etiketlerin dilimlerin üzerine daha iyi oturması için
-                                            anchor: 'center', // 'end', 'start', 'center'
-                                            align: 'center', // 'end', 'start', 'center', 'top', 'bottom'
-                                            // textStrokeColor: 'black', // Yazı dış çizgisi (isteğe bağlı)
-                                            // textStrokeWidth: 1, // Yazı dış çizgi kalınlığı (isteğe bağlı)
                                         }
                                     }
-                                }
-                            });
-                            chartCounter++;
+                                });
+                                chartCounter++;
+                            }
                         }
-                    }
-                });
-            </script>
-        {% elif request.method == "POST" %}
-            <hr>
-            <div class="alert alert-info mt-3">
-                Seçilen kriterlere uygun sınav sonucu bulunamadı veya öğrencinin bu aralıkta denemesi yok.
+                    });
+                </script>
+            {% elif request.method == "POST" %}
+                <hr>
+                <div class="alert alert-info mt-3">
+                    Seçilen kriterlere uygun sınav sonucu bulunamadı veya bu aralıkta denemeniz yok.
+                </div>
+            {% endif %}
+        {% else %} {# Kullanıcı giriş yapmamışsa #}
+            <div class="alert alert-warning mt-3 text-center">
+                Bu sayfayı görüntülemek için lütfen <a href="{% url 'login' %}?next={{ request.path }}">giriş yapın</a>.
             </div>
         {% endif %}
     </div>
