@@ -1,13 +1,13 @@
 from django import forms
-from .models import Sinav, Ogrenci # Ogrenci modelini import ettik
-from django.forms.widgets import DateInput # HTML5 tarih widget'ı için
+from .models import Sinav # Ogrenci import'u kaldırıldı, artık formda kullanılmıyor.
+from django.forms.widgets import DateInput
 
 class VeriYuklemeFormu(forms.Form):
     """
     Admin panelinde Excel veya JSON dosyasından toplu sınav sonucu yüklemek için kullanılan form.
     """
     sinav = forms.ModelChoiceField(
-        queryset=Sinav.objects.all().order_by('-tarih', 'ad'), # Sınavları tarihe göre (en yeni önce) sırala
+        queryset=Sinav.objects.all().order_by('-tarih', 'ad'),
         label="Verileri Yüklenecek Sınav",
         help_text="Lütfen sonuçları hangi sınav için yüklediğinizi seçin.",
         empty_label="--- Sınav Seçiniz ---"
@@ -17,23 +17,18 @@ class VeriYuklemeFormu(forms.Form):
         help_text="Lütfen .xlsx veya .json formatında bir dosya yükleyin."
     )
 
-class OgrenciAnalizFormu(forms.Form): # YENİ EKLENEN FORM
+class OgrenciAnalizFormu(forms.Form):
     """
-    Öğrenci bazlı, tarih aralığına göre sınav sonuç analizi için kullanılan form.
+    Giriş yapmış öğrenci için, tarih aralığına göre sınav sonuç analizi için kullanılan form.
+    Öğrenci seçme alanı kaldırıldı.
     """
-    ogrenci = forms.ModelChoiceField(
-        queryset=Ogrenci.objects.all().order_by('ad_soyad'), # Öğrencileri ada göre sırala
-        label="Öğrenci Seçiniz",
-        empty_label="--- Öğrenci Seçiniz ---", # Bir öğrenci seçmek zorunlu
-        required=True,
-        widget=forms.Select(attrs={'class': 'form-control'}) # Bootstrap uyumlu class eklenebilir
-    )
+    # ogrenci alanı kaldırıldı. View tarafında request.user'dan alınacak.
     baslangic_tarihi = forms.DateField(
         label="Başlangıç Tarihi",
         widget=DateInput(
             attrs={
-                'type': 'date', # HTML5 tarih seçici
-                'class': 'form-control' # Bootstrap uyumlu class
+                'type': 'date',
+                'class': 'form-control'
             }
         ),
         required=True
@@ -42,18 +37,14 @@ class OgrenciAnalizFormu(forms.Form): # YENİ EKLENEN FORM
         label="Bitiş Tarihi",
         widget=DateInput(
             attrs={
-                'type': 'date', # HTML5 tarih seçici
-                'class': 'form-control' # Bootstrap uyumlu class
+                'type': 'date',
+                'class': 'form-control'
             }
         ),
         required=True
     )
 
     def clean(self):
-        """
-        Form verilerini temizlerken ek doğrulama yapar.
-        Başlangıç tarihinin bitiş tarihinden sonra olmamasını kontrol eder.
-        """
         cleaned_data = super().clean()
         baslangic = cleaned_data.get("baslangic_tarihi")
         bitis = cleaned_data.get("bitis_tarihi")
