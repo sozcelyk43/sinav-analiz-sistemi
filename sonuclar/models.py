@@ -1,7 +1,5 @@
 from django.db import models
-# İleride öğrenciler için Django'nun kendi kullanıcı modelini kullanmayı düşünebiliriz,
-# şimdilik ForeignKey ile User modeline bağlanmak yerine kendi Ogrenci modelimizi kullanacağız.
-# from django.contrib.auth.models import User
+from django.contrib.auth.models import User # Django'nun User modelini import ediyoruz
 
 class Ders(models.Model):
     ad = models.CharField(max_length=100, unique=True, verbose_name="Ders Adı")
@@ -14,14 +12,27 @@ class Ders(models.Model):
         verbose_name_plural = "Dersler"
 
 class Ogrenci(models.Model):
-    # Adminin yükleyeceği dosyadaki öğrenciyi tanımlayan benzersiz bir kimlik
-    # Örn: Öğrenci Numarası, TC Kimlik No (hash'lenmiş haliyle saklamak daha güvenli olabilir), veya benzersiz bir kod
-    kimlik_id = models.CharField(max_length=50, unique=True, verbose_name="Öğrenci Kimlik ID")
+    # Django'nun User modeli ile birebir ilişki
+    # Bir User silindiğinde ilişkili Ogrenci kaydı da silinir (CASCADE).
+    # null=True, blank=True: Bir Ogrenci kaydının başlangıçta bir User'a bağlı olmaması durumuna izin verir
+    # (örneğin, User hesabı daha sonra oluşturulacaksa). Ancak idealde her öğrencinin bir User'ı olmalı.
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Kullanıcı Hesabı")
+    
+    kimlik_id = models.CharField(
+        max_length=50, 
+        unique=True, 
+        verbose_name="Öğrenci Kimlik ID",
+        help_text="Öğrencinin benzersiz kimliği. Kullanıcı adı olarak da kullanılabilir."
+    )
     ad_soyad = models.CharField(max_length=150, verbose_name="Adı Soyadı")
-    # İleride Django'nun User modeli ile ilişkilendirmek için:
-    # user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    # Sınıf bilgisi eklemek isterseniz buraya ekleyebilirsiniz:
+    # sinif = models.CharField(max_length=20, verbose_name="Sınıfı", blank=True, null=True)
+
 
     def __str__(self):
+        # Eğer bir kullanıcıya bağlıysa, kullanıcı adını da gösterelim
+        if self.user:
+            return f"{self.ad_soyad} ({self.kimlik_id} - User: {self.user.username})"
         return f"{self.ad_soyad} ({self.kimlik_id})"
 
     class Meta:
@@ -30,7 +41,7 @@ class Ogrenci(models.Model):
 
 class Sinav(models.Model):
     ad = models.CharField(max_length=200, verbose_name="Sınav Adı")
-    tarih = models.DateField(verbose_name="Sınav Tarihi", null=True, blank=True) # İsteğe bağlı
+    tarih = models.DateField(verbose_name="Sınav Tarihi", null=True, blank=True)
 
     def __str__(self):
         return self.ad
@@ -38,6 +49,7 @@ class Sinav(models.Model):
     class Meta:
         verbose_name = "Sınav"
         verbose_name_plural = "Sınavlar"
+        ordering = ['-tarih', 'ad'] # Sınavları en yeni tarihe göre sırala
 
 class Sonuc(models.Model):
     ogrenci = models.ForeignKey(Ogrenci, on_delete=models.CASCADE, verbose_name="Öğrenci")
@@ -46,7 +58,7 @@ class Sonuc(models.Model):
     dogru_sayisi = models.PositiveIntegerField(verbose_name="Doğru Sayısı")
     yanlis_sayisi = models.PositiveIntegerField(verbose_name="Yanlış Sayısı")
     bos_sayisi = models.PositiveIntegerField(verbose_name="Boş Sayısı")
-    net_puan = models.FloatField(verbose_name="Net Puan") # Bu puan, veri yüklenirken hesaplanıp buraya yazılabilir
+    net_puan = models.FloatField(verbose_name="Net Puan")
 
     def __str__(self):
         return f"{self.ogrenci} - {self.sinav} - {self.ders}: {self.net_puan} Net"
@@ -54,5 +66,5 @@ class Sonuc(models.Model):
     class Meta:
         verbose_name = "Sınav Sonucu"
         verbose_name_plural = "Sınav Sonuçları"
-        # Bir öğrencinin aynı sınavda aynı dersten birden fazla sonucu olmaması için:
         unique_together = ('ogrenci', 'sinav', 'ders')
+        ordering = ['-sinav__tarih', 'ogrenci__ad_soyad', 'ders__ad']
