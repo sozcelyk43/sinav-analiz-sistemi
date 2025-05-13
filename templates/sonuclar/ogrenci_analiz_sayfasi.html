@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Öğrenci Sınav Analizi</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script> 
+    <style>
+        body { font-family: sans-serif; padding-top: 70px; background-color: #f4f7f6; }
+        .navbar-custom { background-color: #007bff; }
+        .navbar-custom .navbar-brand, .navbar-custom .nav-link { color: #fff; }
+        .navbar-custom .nav-link:hover { color: #d4d4d4; }
+        .navbar-custom .btn-link-logout { color: #fff; padding: 0.5rem 1rem; text-decoration: none; background-color: transparent; border: none; cursor: pointer; display: inline-block; line-height: inherit; vertical-align: baseline; }
+        .navbar-custom .btn-link-logout:hover { color: #d4d4d4; }
+        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); margin-top: 20px; margin-bottom: 20px; }
+        h1, h2, h4 { color: #333; text-align: center; margin-bottom: 20px; }
+        .form-group label { font-weight: bold; }
+        .chart-container { width: 100%; max-width: 450px; margin: 20px auto; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 30px; }
+        .yanlis-detay-bolumu { margin-top: 15px; padding-top:10px; border-top: 1px solid #eee;}
+        .yanlis-detay-liste { list-style-type: none; padding-left: 0; font-size: 0.85rem; }
+        .yanlis-detay-liste li { padding: 4px 0; border-bottom: 1px dashed #f0f0f0; }
+        .yanlis-detay-liste li:last-child { border-bottom: none; }
+        .unite-baslik { font-weight: bold; margin-top: 8px; color: #444; font-size: 0.9rem; }
+        .alert-info, .alert-warning, .alert-danger { text-align: center; }
+        .btn-primary { background-color: #007bff; border-color: #007bff; }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255, 255, 255, 0.8)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'ana_sayfa' %}">Sınav Analiz Sistemi</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="navbar-text text-white mr-3">Hoşgeldin, {{ user.username }}!</span>
+                        </li>
+                        <li class="nav-item">
+                            <form id="logout-form-nav-analiz" method="post" action="{% url 'logout' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{% url 'ana_sayfa' %}">
+                                <button type="submit" class="btn-link-logout">Çıkış Yap</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                             <a class="nav-link" href="{% url 'login' %}?next={{ request.path }}">Giriş Yap</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Öğrenci Sınav Analizi</h1>
+
+        {% if ogrenci_profili_yok %}
+            <div class="alert alert-danger mt-3">
+                <strong>Hata:</strong> Bu kullanıcı hesabıyla ilişkili bir öğrenci profili bulunamadı. Lütfen sistem yöneticisi ile iletişime geçin veya doğru hesapla giriş yaptığınızdan emin olun.
+            </div>
+        {% elif user.is_authenticated %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group col-md-5">
+                        {{ form.baslangic_tarihi.label_tag }}
+                        {{ form.baslangic_tarihi }}
+                        {% if form.baslangic_tarihi.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.baslangic_tarihi.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-5">
+                        {{ form.bitis_tarihi.label_tag }}
+                        {{ form.bitis_tarihi }}
+                        {% if form.bitis_tarihi.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.bitis_tarihi.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-2 align-self-end">
+                        <button type="submit" class="btn btn-primary btn-block">Analiz Et</button>
+                    </div>
+                </div>
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </form>
+
+            {% if ders_analiz_listesi %} 
+                <hr>
+                <h2>{% if secilen_ogrenci_adi %}{{ secilen_ogrenci_adi }}{% else %}{{ user.username }}{% endif %} için Analiz Sonuçları</h2>
+            
+                <p class="text-center">Seçilen tarih aralığındaki denemeler için ders bazlı Doğru/Yanlış/Boş dağılımları ve yanlış yapılan konular.</p>
+                <div class="charts-grid">
+                    {% for ders_analiz in ders_analiz_listesi %} 
+                    <div class="chart-container">
+                        <h5 class="text-center">{{ ders_analiz.ders_adi }}</h5>
+                        
+                        {% if ders_analiz.dyb_veriler %}
+                        <ul class="ders-ozet-bilgileri">
+                            <li><strong>Toplam Soru:</strong> {{ ders_analiz.dyb_veriler.toplam_soru }}</li>
+                            <li><strong>Doğru:</strong> {{ ders_analiz.dyb_veriler.dogru }}</li>
+                            <li><strong>Yanlış:</strong> {{ ders_analiz.dyb_veriler.yanlis }}</li>
+                            <li><strong>Boş:</strong> {{ ders_analiz.dyb_veriler.bos }}</li>
+                        </ul>
+                        {% endif %}
+
+                        {% if ders_analiz.dyb_veriler %} 
+                            <canvas id="chart-{{ ders_analiz.ders_adi|slugify }}"></canvas> {# Django slugify kullanılır #}
+                        {% else %}
+                             <p class="text-muted text-center small">Bu ders için genel D/Y/B sonucu bulunamadı.</p>
+                        {% endif %}
+                        
+                        {% if ders_analiz.yanlis_detay_uniteler %}
+                            <div class="yanlis-detay-bolumu">
+                                <h6 class="text-muted text-center" style="font-size: 0.95rem; margin-bottom: 5px;">Yanlış Yapılan Konular</h6>
+                                {% for unite_adi, konular in ders_analiz.yanlis_detay_uniteler.items %}
+                                    <p class="unite-baslik mb-1">{{ unite_adi }}</p>
+                                    <ul class="yanlis-detay-liste">
+                                        {% for konu_detay in konular %}
+                                            <li>
+                                                {{ konu_detay.konu }}: <strong>{{ konu_detay.yanlis_adedi }} yanlış</strong>
+                                                <small class="text-muted"> (Sınav: {{ konu_detay.sinav_adi }})</small>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% empty %}
+                                {% endfor %}
+                            </div>
+                        {% elif request.method == "POST" %} 
+                            {% if ders_analiz.dyb_veriler %} 
+                                <p class="text-muted text-center small mt-2">Bu ders için yanlış yapılan konu detayı bulunamadı.</p>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <script>
+                    Chart.register(ChartDataLabels);
+
+                    // Django'nun slugify filtresine benzer bir JavaScript fonksiyonu
+                    function slugify(text) {
+                        if (text === null || typeof text === 'undefined') {
+                            return '';
+                        }
+                        text = text.toString().toLowerCase().trim();
+                        // Django'nun "Yabancı Dil" -> "yabanc-dil" davranışını taklit etmek için 'ı' -> ''
+                        const trMap = { 
+                            'ç': 'c', 'ğ': 'g', 'ı': '', 'ö': 'o', 'ş': 's', 'ü': 'u'
+                            // Büyük harfler için map'e gerek yok, önce toLowerCase() yapıyoruz.
+                        };
+                        for (let key in trMap) {
+                            text = text.replace(new RegExp(key, 'g'), trMap[key]);
+                        }
+                        text = text
+                            .replace(/\s+/g, '-')     // Boşlukları - ile değiştir
+                            .replace(/[^\w-]+/g, '') // Kelime olmayan karakterleri kaldır (tire hariç)
+                            .replace(/--+/g, '-')    // Birden fazla tireyi tek tire yap
+                            .replace(/^-+/, '')      // Baştaki tireleri kaldır
+                            .replace(/-+$/, '');     // Sondaki tireleri kaldır
+                        return text;
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const analizVerileriGrafik = JSON.parse('{{ analiz_verileri_json|default_if_none:"{}"|escapejs }}');
+                        const dersEtiketleri = JSON.parse('{{ ders_etiketleri|escapejs }}');
+                        const chartColors = ['#28a745', '#dc3545', '#ffc107'];
+                        
+                        console.log("Analiz için Grafik Verisi (JSON'dan parse edilmiş):", analizVerileriGrafik);
+
+                        {% for ders_analiz_item in ders_analiz_listesi %}
+                            {% if ders_analiz_item.dyb_veriler %}
+                                console.log("Django Template Ders Adı: {{ ders_analiz_item.ders_adi }}", "Slugified (Django): chart-{{ ders_analiz_item.ders_adi|slugify }}");
+                            {% endif %}
+                        {% endfor %}
+
+                        for (const orijinalDersAdi in analizVerileriGrafik) {
+                            if (analizVerileriGrafik.hasOwnProperty(orijinalDersAdi)) {
+                                const slugifiedDersAdiJS = slugify(orijinalDersAdi);
+                                const canvasId = 'chart-' + slugifiedDersAdiJS;
+                                const ctx = document.getElementById(canvasId);
+                                const dataPoints = analizVerileriGrafik[orijinalDersAdi];
+                                
+                                console.log("İşlenen Ders (JS):", orijinalDersAdi);
+                                console.log("  Slug (JS):", slugifiedDersAdiJS); // Bu artık "yabanc-dil" olmalı
+                                console.log("  Aranan Canvas ID (JS):", canvasId); // Bu artık "chart-yabanc-dil" olmalı
+                                console.log("  Canvas Elementi Bulundu mu?:", ctx ? 'Evet' : 'HAYIR');
+                                console.log("  Bu ders için veri noktaları:", dataPoints);
+
+                                if (ctx && dataPoints && dataPoints.some(p => p > 0)) {
+                                    new Chart(ctx.getContext('2d'), {
+                                        type: 'pie',
+                                        data: {
+                                            labels: dersEtiketleri,
+                                            datasets: [{
+                                                label: orijinalDersAdi + ' Dağılımı',
+                                                data: dataPoints,
+                                                backgroundColor: chartColors,
+                                                borderColor: '#fff',
+                                                borderWidth: 1
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            maintainAspectRatio: true,
+                                            plugins: {
+                                                legend: { position: 'top', },
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: function(tooltipItem) {
+                                                            let sum = tooltipItem.dataset.data.reduce((a, b) => a + b, 0);
+                                                            let percentage = sum > 0 ? (tooltipItem.raw / sum * 100).toFixed(2) + '%' : '0.00%';
+                                                            return tooltipItem.label + ': ' + tooltipItem.raw + ' (' + percentage + ')';
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    formatter: (value, context) => { return value > 0 ? value : ''; },
+                                                    color: '#fff',
+                                                    font: { weight: 'bold', size: 14, },
+                                                    anchor: 'center',
+                                                    align: 'center',
+                                                }
+                                            }
+                                        }
+                                    });
+                                } else if (ctx) {
+                                     console.log("Grafik çizilmedi (veri yok veya tümü sıfır):", orijinalDersAdi, dataPoints);
+                                }
+                            }
+                        }
+                    });
+                </script>
+
+
+            {% elif request.method == "POST" and not ogrenci_profili_yok %}
+                <hr>
+                <div class="alert alert-info mt-3">
+                    Seçilen kriterlere uygun sınav sonucu veya yanlış detayı bulunamadı ya da bu aralıkta denemeniz yok.
+                </div>
+            {% endif %}
+        {% else %} 
+            <div class="alert alert-warning mt-3 text-center">
+                Bu sayfayı görüntülemek için lütfen <a href="{% url 'login' %}?next={{ request.path }}">giriş yapın</a>.
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

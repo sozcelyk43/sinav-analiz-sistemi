@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap - Sınav Analiz Sistemi</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f8f9fa; /* Açık gri arka plan */
+        }
+        .login-container {
+            background-color: #fff; /* Beyaz form arka planı */
+            padding: 35px;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 420px; /* Form genişliği */
+        }
+        .login-container h2 {
+            margin-bottom: 25px;
+            color: #333;
+            text-align: center;
+            font-weight: 500;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+        .btn-login {
+            background-color: #007bff;
+            border-color: #007bff;
+            font-size: 1.1rem;
+            padding: 0.7rem;
+            font-weight: 500;
+        }
+        .btn-login:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        .alert-error { /* Django form hataları için özel stil */
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+            padding: .75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: .25rem;
+        }
+        .extra-links {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .extra-links a {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Öğrenci Girişi</h2>
+
+        {# Django'nun AuthenticationForm'undan gelen hataları gösterir #}
+        {% if form.errors %}
+            <div class="alert-error">
+                Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.
+            </div>
+        {% endif %}
+
+        {# Eğer kullanıcı zaten giriş yapmışsa, bir mesaj ve çıkış linki göster #}
+        {% if user.is_authenticated %}
+            <p class="text-center">Zaten giriş yaptınız, {{ user.username }}.</p>
+            {# Çıkış yapınca kök URL'e yönlendir #}
+            <p class="text-center"><a href="{% url 'logout' %}?next=/">Çıkış Yap</a></p> 
+        {% else %}
+            {# Giriş formu #}
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %} {# CSRF koruması için zorunlu #}
+                
+                <div class="form-group">
+                    <label for="id_username">Kullanıcı Adı (Öğrenci Kimlik ID):</label>
+                    <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="id_password">Şifre:</label>
+                    <input type="password" name="password" autocomplete="current-password" required id="id_password" class="form-control">
+                </div>
+                
+                <button type="submit" class="btn btn-login btn-block">Giriş Yap</button>
+                
+                <input type="hidden" name="next" value="{{ request.GET.next | default:'/' }}">
+            </form>
+        {% endif %}
+        <div class="extra-links">
+            {# Ana sayfa linki şimdilik kök URL'e gitsin #}
+            <p><a href="/">Ana Sayfaya Dön</a></p> 
+            {# <p><a href="{% url 'password_reset' %}">Şifremi Unuttum?</a></p> #}
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

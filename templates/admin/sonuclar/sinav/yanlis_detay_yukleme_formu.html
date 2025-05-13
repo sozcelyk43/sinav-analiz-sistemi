@@ -1,0 +1,68 @@
+    {% extends "admin/base_site.html" %}
+    {% load i18n static %}
+
+    {% block extrastyle %}{{ block.super }}
+        <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    {% endblock %}
+
+    {% block breadcrumbs %}
+        <div class="breadcrumbs">
+            <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a> &rsaquo; 
+            <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_label|capfirst }}</a> &rsaquo; 
+            <a href="{% url 'admin:sonuclar_sinav_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo; 
+            <a href="{% url 'admin:sonuclar_sinav_change' object_id=sinav.pk %}">{{ sinav.ad|truncatewords:"18" }}</a> &rsaquo;
+            {{ title }}
+        </div>
+    {% endblock %}
+
+    {% block content %}
+        <h1>{{ title }}</h1>
+        <div id="content-main">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div>
+                    {% if form.errors or form.non_field_errors %}
+                        <p class="errornote">
+                        {% if form.errors.items|length == 1 %}{% translate "Please correct the error below." %}{% else %}{% translate "Please correct the errors below." %}{% endif %}
+                        </p>
+                        {{ form.non_field_errors }}
+                    {% endif %}
+
+                    {# Sinav alanı formda gizli veya sadece bilgi amaçlı gösterilebilir, çünkü URL'den alınıyor #}
+                    {# {% if form.sinav %}
+                        <fieldset class="module aligned">
+                            <div class="form-row field-sinav">
+                                {{ form.sinav.errors }}
+                                <div class="flex-container">
+                                    {{ form.sinav.label_tag }}
+                                    <p><strong>{{ sinav.ad }}</strong></p> 
+                                    {# {{ form.sinav }} #} {# Bu alanı göstermeye gerek yok veya readonly yapabiliriz #}
+                                </div>
+                                {% if form.sinav.help_text %}
+                                    <div class="help">{{ form.sinav.help_text|safe }}</div>
+                                {% endif %}
+                            </div>
+                        </fieldset>
+                    {% endif %} #}
+                    
+                    <fieldset class="module aligned">
+                         <div class="form-row field-detay_dosyasi">
+                            {{ form.detay_dosyasi.errors }}
+                            <div class="flex-container">
+                                {{ form.detay_dosyasi.label_tag }}
+                                {{ form.detay_dosyasi }}
+                            </div>
+                            {% if form.detay_dosyasi.help_text %}
+                                <div class="help">{{ form.detay_dosyasi.help_text|safe }}</div>
+                            {% endif %}
+                        </div>
+                    </fieldset>
+
+                    <div class="submit-row">
+                        <input type="submit" value="{% translate 'Yanlış Detaylarını Yükle' %}" class="default">
+                    </div>
+                </div>
+            </form>
+        </div>
+    {% endblock %}
+    
