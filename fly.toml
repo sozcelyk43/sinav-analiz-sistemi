@@ -1,20 +1,45 @@
-# fly.toml app configuration file generated for yenisinavprojesi on 2025-05-11T01:14:51+03:00
+# fly.toml app configuration file for sinav-analiz-sistemi-fly
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'yenisinavprojesi'
-primary_region = 'ams'
+app = 'sinav-analiz-sistemi-fly' # flyctl launch ile oluşturulan uygulama adınız
+primary_region = 'ams' # flyctl launch ile seçtiğiniz bölge
+console_command = '/app/manage.py shell' # Çalışma dizini /app olduğu için
+
+[build]
+  # Dockerfile kullanıldığı için bu bölüm genellikle boş bırakılabilir veya
+  # builder = "dockerfile" # gibi bir satır eklenebilir (genellikle otomatik algılanır)
+
+[deploy]
+  # Yeni bir sürüm dağıtıldığında, uygulama başlatılmadan önce çalıştırılacak komut.
+  # Statik dosyalar artık Dockerfile içinde toplanıyor.
+  release_command = "python manage.py migrate --noinput"
+
+[env]
+  PORT = "8000"
+  # DJANGO_SETTINGS_MODULE = "sinav_sistemi.settings" # Genellikle wsgi.py bunu ayarlar
 
 [http_service]
-  internal_port = 8080
+  internal_port = 8000
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = true 
   auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
+  min_machines_running = 0 
+  processes = ["app"] 
 
-[[vm]]
-  memory = '1gb'
+# Uygulamanızı çalıştıracak ana süreç (Gunicorn)
+[processes]
+  app = "gunicorn sinav_sistemi.wsgi:application --bind 0.0.0.0:8000 --workers 2 --threads 4 --worker-class gthread"
+  
+[[vm]] 
+  memory = '1gb' 
   cpu_kind = 'shared'
   cpus = 1
+
+# Statik dosyaların sunulması için ayarlar
+# Whitenoise kullandığımız için bu bölüm isteğe bağlıdır, ancak Fly.io'nun CDN'inden
+# yararlanmak için tutulabilir. guest_path, settings.py'deki STATIC_ROOT ile eşleşmelidir.
+[[statics]]
+  guest_path = "/app/staticfiles_live" 
+  url_prefix = "/static/"
