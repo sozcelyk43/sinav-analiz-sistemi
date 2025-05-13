@@ -3,46 +3,43 @@ Django settings for sinav_sistemi project.
 """
 from pathlib import Path
 import os
-import dj_database_url # Render'da veritabanı bağlantısı için
+import dj_database_url # Fly.io'da veritabanı bağlantısı için
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECRET_KEY'i ortam değişkeninden al, eğer yoksa (yerel geliştirme için) varsayılan bir değer kullan.
-# Render'da bu ortam değişkenini ayarlayacağız.
-# YEREL_GELISTIRME_SECRET_KEY_BURAYA_KOYUN kısmını kendi yerel SECRET_KEY'inizle değiştirebilirsiniz
-# veya yeni bir tane üretebilirsiniz. Canlıda KESİNLİKLE bu varsayılanı kullanmayın.
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-YEREL_GELISTIRME_SECRET_KEY_BURAYA_KOYUN')
+# SECRET_KEY'i ortam değişkeninden al. Fly.io'da bunu secret olarak ayarlayacağız.
+# Yerel geliştirme için varsayılan bir değer kullanın.
+# ÖNEMLİ: Canlıda KESİNLİKLE bu varsayılan anahtarı kullanmayın!
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'Allalbin435')
 
-# DEBUG modunu ortam değişkeninden al. Render'da 'False' olacak.
-# 'RENDER' ortam değişkeni Render tarafından otomatik olarak ayarlanır.
-DEBUG = 'RENDER' not in os.environ 
-# Alternatif: DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True' 
-# (Bu durumda Render'da DJANGO_DEBUG=False ayarlamanız gerekir)
-
+# DEBUG modunu ortam değişkeninden al. Fly.io'da 'False' olmalı.
+# FLY_APP_NAME ortam değişkeni Fly.io tarafından otomatik olarak ayarlanır.
+DEBUG = not os.environ.get('FLY_APP_NAME') # Eğer FLY_APP_NAME varsa, DEBUG=False olur.
 
 ALLOWED_HOSTS = []
 
-# Render tarafından sağlanan hostname'i ALLOWED_HOSTS'a ekle
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+# Fly.io tarafından sağlanan hostname'i ALLOWED_HOSTS'a ekle
+FLY_APP_HOSTNAME = os.environ.get('FLY_APP_NAME')
+if FLY_APP_HOSTNAME:
+    ALLOWED_HOSTS.append(f"{FLY_APP_HOSTNAME}.fly.dev")
+
+# Eğer bir custom domain (özel alan adı) ayarlarsanız, onu da buraya ekleyin:
+# ALLOWED_HOSTS.append('www.sizinanalizsiteniz.com')
 
 # Yerel geliştirme için localhost'u da ekleyebilirsiniz
 if DEBUG:
     ALLOWED_HOSTS.append('127.0.0.1')
     ALLOWED_HOSTS.append('localhost')
 
-
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'whitenoise.runserver_nostatic', # Whitenoise (statik dosyalar için) - staticfiles'dan ÖNCE olmalı
+    'whitenoise.runserver_nostatic', # Whitenoise (statik dosyalar için)
     'django.contrib.staticfiles',
     'sonuclar', # Kendi uygulamamız
 ]
@@ -78,14 +75,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sinav_sistemi.wsgi.application'
 
-
 # Veritabanı Ayarları
-# Render'da PostgreSQL kullanacağız ve bağlantı bilgilerini DATABASE_URL ortam değişkeninden alacağız.
-if 'RENDER' in os.environ: # Render ortamında çalışıyorsak
+# Fly.io'da PostgreSQL kullanacağız ve bağlantı bilgilerini DATABASE_URL ortam değişkeninden alacağız.
+if os.environ.get('DATABASE_URL'): # DATABASE_URL ortam değişkeni varsa
     DATABASES = {
         'default': dj_database_url.config(
             conn_max_age=600, # Bağlantı ömrü (saniye)
-            ssl_require=True  # Render PostgreSQL genellikle SSL gerektirir
+            sslmode='prefer' # Veya 'require' - Fly.io PostgreSQL genellikle SSL gerektirir
         )
     }
 else: # Yerel geliştirme ortamında SQLite kullanmaya devam et
@@ -96,7 +92,6 @@ else: # Yerel geliştirme ortamında SQLite kullanmaya devam et
         }
     }
 
-
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
@@ -105,36 +100,34 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
-
 # Internationalization
-LANGUAGE_CODE = 'tr-tr' # Türkçe ayarı
-TIME_ZONE = 'Europe/Istanbul' # Türkiye saat dilimi
+LANGUAGE_CODE = 'tr-tr'
+TIME_ZONE = 'Europe/Istanbul'
 USE_I18N = True
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = '/static/' # Tarayıcıda statik dosyalara erişim için URL ön eki
+STATIC_URL = '/static/'
 # `collectstatic` komutunun tüm statik dosyaları toplayacağı klasör
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_live') # Canlı ortam için farklı bir isim olabilir
+# Dockerfile'daki WORKDIR /app olduğu için bu yol /app/staticfiles_live olur.
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_live') 
 
 # Whitenoise'un sıkıştırılmış statik dosyaları sunmasını sağlar (önerilir)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-
-# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Kullanıcı giriş/çıkış sonrası yönlendirme ayarları
-LOGIN_REDIRECT_URL = '/'  # Başarılı girişten sonra ana sayfaya yönlendir
-LOGOUT_REDIRECT_URL = '/' # Başarılı çıkıştan sonra ana sayfaya yönlendir
-LOGIN_URL = '/hesap/login/' # Giriş yapılmamışsa yönlendirilecek URL
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/hesap/login/'
 
-# Render'da HTTPS üzerinden çalışacağı için ek güvenlik ayarları
-if 'RENDER' in os.environ:
+# Fly.io'da HTTPS üzerinden çalışacağı için ek güvenlik ayarları
+if os.environ.get('FLY_APP_NAME'):
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True # HTTP isteklerini otomatik olarak HTTPS'ye yönlendir
-    SECURE_HSTS_SECONDS = 31536000 # 1 yıl (tarayıcıya siteyi sadece HTTPS ile açmasını söyler)
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True # Alt alan adlarını da HSTS kapsamına al
-    SECURE_HSTS_PRELOAD = True # Sitenizi HSTS preload listelerine göndermek için (isteğe bağlı)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # Fly.io proxy için
+    SECURE_SSL_REDIRECT = True
+    # HSTS ayarları isteğe bağlıdır ama önerilir
+    # SECURE_HSTS_SECONDS = 31536000 
+    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # SECURE_HSTS_PRELOAD = True
