@@ -1,0 +1,1 @@
+web: gunicorn sinav_sistemi.wsgi:application --log-file -

@@ -1,0 +1,39 @@
+    # Sanal ortam klasörleri
+    venv/
+    */venv/
+    env/
+    */env/
+    .env
+    */.env
+    .direnv/
+
+    # Python cache dosyaları
+    __pycache__/
+    *.py[cod]
+    *$py.class
+
+    # Django SQLite veritabanı
+    # Render'da PostgreSQL veya başka bir yönetilen veritabanı kullanacağız.
+    db.sqlite3
+    *.sqlite3
+
+    # IDE ve İşletim Sistemi özel dosyaları
+    .vscode/
+    .idea/
+    *.DS_Store
+    Thumbs.db
+
+    # Render'da collectstatic ile oluşturulacak statik dosyalar klasörü
+    # Bu klasörün içeriği her dağıtımda yeniden oluşturulur.
+    /staticfiles_live/ # settings.py'deki STATIC_ROOT ile aynı olmalı (başında / olabilir)
+
+    # Medya dosyaları (kullanıcı tarafından yüklenenler) - genellikle S3 gibi bir yerde tutulur
+    # /media/
+
+    # Yerelde oluşturulan örnek Excel dosyaları (eğer varsa)
+    ornek_*.xlsx
+
+    # Hassas bilgileri içeren dosyalar (eğer kullanıyorsanız)
+    # secrets.json
+    # *.local_settings.py
+    
