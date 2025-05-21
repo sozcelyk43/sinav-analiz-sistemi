@@ -1,40 +1,35 @@
 from django.db import migrations
-import os # Ortam değişkenlerini okumak için
-from django.contrib.auth.hashers import make_password # Şifreyi hashlemek için
+import os 
+from django.contrib.auth.hashers import make_password 
 
-# Superuser oluşturmak veya şifresini güncellemek için bir fonksiyon
 def create_or_reset_superuser(apps, schema_editor):
-    User = apps.get_model('auth', 'User') # Django'nun User modelini alıyoruz
+    User = apps.get_model('auth', 'User') 
     db_alias = schema_editor.connection.alias
-
-    # Ortam değişkenlerinden kullanıcı adı, e-posta ve şifreyi almayı deneyelim
-    # Render'da bu ortam değişkenlerini ayarlamanız GÜVENLİK açısından en iyisidir.
-    # Eğer ortam değişkenleri yoksa, aşağıdaki varsayılan değerler kullanılacak.
-    # DİKKAT: Koda doğrudan şifre yazmak GÜVENLİ DEĞİLDİR!
-    #          Bu sadece geçici bir çözüm veya acil durum için düşünülmelidir.
-    #          En iyi pratik, Render'da bu değişkenleri "Secret" olarak ayarlamaktır.
     
-    SUPERUSER_USERNAME = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin_render') # Varsayılan: admin_render
-    SUPERUSER_EMAIL = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin_render@example.com') # Varsayılan e-posta
-    SUPERUSER_PASSWORD = os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'YeniSifre123!') # Varsayılan: YeniSifre123! (BUNU DEĞİŞTİRİN!)
+    SUPERUSER_USERNAME = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'sozcelyk') 
+    SUPERUSER_EMAIL = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'sozcelyk@gmail.com') 
+    SUPERUSER_PASSWORD = os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'Allalbin435..')
 
     if not SUPERUSER_PASSWORD:
         print("\nUYARI: DJANGO_SUPERUSER_PASSWORD ortam değişkeni ayarlanmamış. Superuser şifresi güncellenmeyecek/oluşturulmayacak.")
         return
 
     try:
-        # Kullanıcıyı kullanıcı adına göre bulmaya çalış
-        user = User.objects.using(db_alias).get(username=SUPERUSER_USERNAME)
-        # Eğer kullanıcı varsa, şifresini güncelle
-        user.set_password(SUPERUSER_PASSWORD) # set_password şifreyi hashler
+        # User.objects yerine User._default_manager kullanarak doğru yöneticiyi alalım
+        # veya doğrudan User.objects.using(db_alias) üzerinden işlem yapalım.
+        # En temizi, User modelinin kendi yöneticisini kullanmaktır.
+        user_manager = User.objects.db_manager(db_alias) # Doğru veritabanı için yöneticiyi al
+
+        user = user_manager.get(username=SUPERUSER_USERNAME)
+        user.set_password(SUPERUSER_PASSWORD) 
         user.is_staff = True
         user.is_superuser = True
         user.save(using=db_alias)
         print(f"\n'{SUPERUSER_USERNAME}' adlı superuser'ın şifresi başarıyla güncellendi.")
     except User.DoesNotExist:
-        # Eğer kullanıcı yoksa, yeni bir superuser oluştur
         print(f"\nSuperuser '{SUPERUSER_USERNAME}' bulunamadı, yenisi oluşturuluyor...")
-        User.objects.using(db_alias).create_superuser(
+        # create_superuser metodunu doğru yönetici üzerinden çağır
+        user_manager.create_superuser(
             username=SUPERUSER_USERNAME,
             email=SUPERUSER_EMAIL,
             password=SUPERUSER_PASSWORD
@@ -47,15 +42,9 @@ def create_or_reset_superuser(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        # Bu migration'ın hangi migration'dan sonra çalışacağını belirtin.
-        # 'sonuclar' uygulamanızın bir önceki migration'ının adını buraya yazın.
-        # Örneğin, eğer bir önceki migration '0002_konu_ogrenciyanlisdetayi.py' ise:
         ('sonuclar', '0002_konu_ogrenciyanlisdetayi'), 
-        # User modelinin var olduğundan emin olmak için auth uygulamasının son migration'ına da bağlı olabilir.
-        # ('auth', '__latest__'), # Bu genellikle User modeli için gerekli değildir, çünkü User modeli daha önce oluşturulur.
     ]
 
     operations = [
-        # Yukarıda tanımladığımız create_or_reset_superuser fonksiyonunu çalıştır
         migrations.RunPython(create_or_reset_superuser),
     ]
