@@ -1,0 +1,51 @@
+    {% extends "admin/base_site.html" %}
+    {% load i18n static %}
+
+    {% block extrastyle %}{{ block.super }}
+        <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    {% endblock %}
+
+    {% block breadcrumbs %}
+        <div class="breadcrumbs">
+            <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a> &rsaquo; 
+            <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_label|capfirst }}</a> &rsaquo; 
+            <a href="{% url 'admin:sonuclar_ogrenciyanlisdetayi_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo; 
+            {{ title }}
+        </div>
+    {% endblock %}
+
+    {% block content %}
+        <h1>{{ title }}</h1>
+        <div id="content-main">
+            <p>Lütfen <strong>Ogrenci_Kimlik_ID</strong>, <strong>Sinav_Adi</strong>, <strong>Ders_Adi</strong>, <strong>Unite_Adi</strong>, <strong>Konu_Adi_Kazanım_Adi</strong> ve <strong>Yanlis_Adedi_Bu_Konuda</strong> sütunlarını içeren bir Excel (.xlsx) veya JSON (.json) dosyası yükleyin.</p>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div>
+                    {% if form.errors or form.non_field_errors %}
+                        <p class="errornote">
+                        {% if form.errors.items|length == 1 %}{% translate "Please correct the error below." %}{% else %}{% translate "Please correct the errors below." %}{% endif %}
+                        </p>
+                        {{ form.non_field_errors }}
+                    {% endif %}
+                    
+                    <fieldset class="module aligned">
+                         <div class="form-row field-yanlis_detay_excel_dosyasi">
+                            {{ form.yanlis_detay_excel_dosyasi.errors }}
+                            <div class="flex-container">
+                                {{ form.yanlis_detay_excel_dosyasi.label_tag }}
+                                {{ form.yanlis_detay_excel_dosyasi }}
+                            </div>
+                            {% if form.yanlis_detay_excel_dosyasi.help_text %}
+                                <div class="help">{{ form.yanlis_detay_excel_dosyasi.help_text|safe }}</div>
+                            {% endif %}
+                        </div>
+                    </fieldset>
+
+                    <div class="submit-row">
+                        <input type="submit" value="{% translate 'Yanlış Detaylarını Toplu Yükle' %}" class="default">
+                    </div>
+                </div>
+            </form>
+        </div>
+    {% endblock %}
+    
