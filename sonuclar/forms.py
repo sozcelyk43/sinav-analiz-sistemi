@@ -1,5 +1,5 @@
 from django import forms
-from .models import Sinav
+from .models import Sinav 
 from django.forms.widgets import DateInput
 
 class VeriYuklemeFormu(forms.Form):
@@ -59,32 +59,41 @@ class KonuKazanımYuklemeFormu(forms.Form):
                 )
         return dosya
 
-# --- DÜZELTİLMİŞ FORM ---
-class YanlisDetayYuklemeFormu(forms.Form):
-    """
-    Admin panelinde Excel veya JSON dosyasından toplu olarak
-    öğrenci yanlış detaylarını (ünite, konu bazlı) yüklemek için kullanılacak form.
-    Sınav alanı kaldırıldı, çünkü sınav bilgisi URL'den alınıyor.
-    """
+class YanlisDetayYuklemeFormu(forms.Form): # Bu form SinavAdmin'de kullanılıyor, sınavı URL'den alıyor
     detay_dosyasi = forms.FileField(
         label="Yanlış Detay Dosyası (Excel veya JSON)",
         help_text="Lütfen ünite/konu bazlı yanlış adetlerini içeren .xlsx veya .json formatında bir dosya yükleyin.",
-        required=True # Dosya yüklemek zorunlu
+        required=True
     )
-
     def clean_detay_dosyasi(self):
-        """
-        Yüklenen dosyanın uzantısını kontrol eder.
-        """
         dosya = self.cleaned_data.get('detay_dosyasi')
-        if dosya: # Dosya seçilmişse kontrol et
+        if dosya:
             dosya_adi = dosya.name.lower()
             if not (dosya_adi.endswith('.xlsx') or dosya_adi.endswith('.json')):
                 raise forms.ValidationError(
                     "Desteklenmeyen dosya formatı. Lütfen .xlsx veya .json uzantılı bir dosya yükleyin."
                 )
-        # Eğer dosya zorunluysa ve seçilmemişse, Django zaten "Bu alan zorunludur" hatası verir.
-        # Ama burada ek bir kontrol de yapılabilir:
-        # elif not dosya and self.fields['detay_dosyasi'].required:
-        #     raise forms.ValidationError("Lütfen bir dosya seçin.")
+        return dosya
+
+# --- YENİ EKLENEN FORM (Genel Yanlış Detay Yükleme İçin) ---
+class GenelYanlisDetayYuklemeFormu(forms.Form):
+    """
+    Admin panelinde "Öğrenci Yanlış Detayları" listeleme sayfasından
+    toplu olarak yanlış detaylarını yüklemek için kullanılacak form.
+    Bu formda sınav seçimi olmayacak, sınav bilgisi Excel'den okunacak.
+    """
+    yanlis_detay_excel_dosyasi = forms.FileField(
+        label="Yanlış Detayları Excel Dosyası",
+        help_text="Lütfen Öğrenci No, Sınav Adı, Ders Adı, Ünite Adı, Konu/Kazanım Adı ve Yanlış Adedi sütunlarını içeren .xlsx veya .json formatında bir dosya yükleyin.",
+        required=True
+    )
+
+    def clean_yanlis_detay_excel_dosyasi(self):
+        dosya = self.cleaned_data.get('yanlis_detay_excel_dosyasi')
+        if dosya:
+            dosya_adi = dosya.name.lower()
+            if not (dosya_adi.endswith('.xlsx') or dosya_adi.endswith('.json')):
+                raise forms.ValidationError(
+                    "Desteklenmeyen dosya formatı. Lütfen .xlsx veya .json uzantılı bir dosya yükleyin."
+                )
         return dosya
