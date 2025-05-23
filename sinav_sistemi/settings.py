@@ -6,32 +6,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '*-l9dt$58acv58a%!16r92sbne4y@f=!ot9=_3ciih&y574ad(') # YEREL KEYİNİZİ BURAYA YAZIN
 
-# DEBUG modunu Koyeb ortam değişkeni ile ayarla
-# KOYEB_APP_NAME veya KOYEB_SERVICE_ID gibi bir Koyeb ortam değişkeni varsa DEBUG=False olur.
-# Alternatif olarak, Koyeb'de DJANGO_DEBUG="False" olarak bir ortam değişkeni ayarlayabilirsiniz.
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 if os.environ.get('sinav-analiz-sistemi'): # Koyeb'in otomatik ayarladığı bir ortam değişkeni
     DEBUG = False
 
 ALLOWED_HOSTS = []
 
-# Koyeb tarafından sağlanan hostname'i ALLOWED_HOSTS'a ekle
 KOYEB_PUBLIC_HOSTNAME = os.environ.get('vocal-maddy-sozcelyk43-2f45add4.koyeb.app')
 if KOYEB_PUBLIC_HOSTNAME:
     ALLOWED_HOSTS.append(KOYEB_PUBLIC_HOSTNAME)
 
-# Koyeb'in eski tip (app-org.koyeb.app) alan adı formatı için de bir kontrol eklenebilir (isteğe bağlı)
-KOYEB_APP_NAME = os.environ.get('sinav-analiz-sistemi')
-KOYEB_ORGANIZATION_ID = os.environ.get('vocal-maddy-sozcelyk43-2f45add4.koyeb.app')
-if KOYEB_APP_NAME and KOYEB_ORGANIZATION_ID:
-    koyeb_legacy_host = f"{KOYEB_APP_NAME}-{KOYEB_ORGANIZATION_ID}.koyeb.app"
-    if koyeb_legacy_host not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(koyeb_legacy_host)
+# Hata mesajında gördüğünüz spesifik Koyeb alan adınızı BURAYA EKLEYİN
+# Bu, KOYEB_PUBLIC_HOSTNAME değişkeni beklendiği gibi çalışmazsa bir güvence olur.
+# Örnek: ALLOWED_HOSTS.append('vocal-maddy-sozcelyk43-2f45add4.koyeb.app') 
 
-# Eğer özel bir alan adı (custom domain) kullanıyorsanız, onu da buraya ekleyin:
-# ALLOWED_HOSTS.append('www.sizinanalizsiteniz.com')
-
-# Yerel geliştirme için
 if DEBUG:
     ALLOWED_HOSTS.append('127.0.0.1')
     ALLOWED_HOSTS.append('localhost')
@@ -82,7 +70,7 @@ if os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(
             conn_max_age=600,
-            ssl_require=True # Koyeb PostgreSQL genellikle SSL gerektirir
+            ssl_require=True 
         )
     }
 else:
@@ -120,3 +108,11 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True
+
+
+
+
+
+
+
+
