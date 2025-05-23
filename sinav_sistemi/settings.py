@@ -4,7 +4,7 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-YERELDE_KULLANDIGINIZ_GECICI_BIR_KEY') # YEREL KEYİNİZİ BURAYA YAZIN
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '*-l9dt$58acv58a%!16r92sbne4y@f=!ot9=_3ciih&y574ad(') # YEREL KEYİNİZİ BURAYA YAZIN
 
 # DEBUG modunu Koyeb ortam değişkeni ile ayarla
 # KOYEB_APP_NAME veya KOYEB_SERVICE_ID gibi bir Koyeb ortam değişkeni varsa DEBUG=False olur.
