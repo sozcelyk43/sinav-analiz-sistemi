@@ -4,15 +4,13 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECRET_KEY'i ortam değişkeninden al. Koyeb'de bunu secret olarak ayarlayacağız.
-# Yerel geliştirme için varsayılan bir değer kullanın.
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-YERELDE_KULLANDIGINIZ_GECICI_BIR_KEY') # YEREL KEYİNİZİ BURAYA YAZIN
 
-# DEBUG modunu ortam değişkeninden al. Koyeb'de 'False' olmalı.
+# DEBUG modunu Koyeb ortam değişkeni ile ayarla
 # KOYEB_APP_NAME veya KOYEB_SERVICE_ID gibi bir Koyeb ortam değişkeni varsa DEBUG=False olur.
-# Veya DJANGO_DEBUG ortam değişkenini Koyeb'de False olarak ayarlayabilirsiniz.
+# Alternatif olarak, Koyeb'de DJANGO_DEBUG="False" olarak bir ortam değişkeni ayarlayabilirsiniz.
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
-if os.environ.get('KOYEB_APP_NAME'): # Koyeb ortamında çalışıyorsa DEBUG'ı False yap
+if os.environ.get('KOYEB_APP_NAME'): # Koyeb'in otomatik ayarladığı bir ortam değişkeni
     DEBUG = False
 
 ALLOWED_HOSTS = []
@@ -22,7 +20,15 @@ KOYEB_PUBLIC_HOSTNAME = os.environ.get('KOYEB_PUBLIC_HOSTNAME')
 if KOYEB_PUBLIC_HOSTNAME:
     ALLOWED_HOSTS.append(KOYEB_PUBLIC_HOSTNAME)
 
-# Eğer bir custom domain (özel alan adı) ayarlarsanız, onu da buraya ekleyin:
+# Koyeb'in eski tip (app-org.koyeb.app) alan adı formatı için de bir kontrol eklenebilir (isteğe bağlı)
+KOYEB_APP_NAME = os.environ.get('KOYEB_APP_NAME')
+KOYEB_ORGANIZATION_ID = os.environ.get('KOYEB_ORGANIZATION_ID')
+if KOYEB_APP_NAME and KOYEB_ORGANIZATION_ID:
+    koyeb_legacy_host = f"{KOYEB_APP_NAME}-{KOYEB_ORGANIZATION_ID}.koyeb.app"
+    if koyeb_legacy_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(koyeb_legacy_host)
+
+# Eğer özel bir alan adı (custom domain) kullanıyorsanız, onu da buraya ekleyin:
 # ALLOWED_HOSTS.append('www.sizinanalizsiteniz.com')
 
 # Yerel geliştirme için
@@ -100,7 +106,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_live') 
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_live')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
