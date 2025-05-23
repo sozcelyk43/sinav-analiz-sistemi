@@ -21,8 +21,8 @@ if KOYEB_PUBLIC_HOSTNAME:
     ALLOWED_HOSTS.append(KOYEB_PUBLIC_HOSTNAME)
 
 # Koyeb'in eski tip (app-org.koyeb.app) alan adı formatı için de bir kontrol eklenebilir (isteğe bağlı)
-KOYEB_APP_NAME = os.environ.get('KOYEB_APP_NAME')
-KOYEB_ORGANIZATION_ID = os.environ.get('KOYEB_ORGANIZATION_ID')
+KOYEB_APP_NAME = os.environ.get('sinav-analiz-sistemi')
+KOYEB_ORGANIZATION_ID = os.environ.get('vocal-maddy-sozcelyk43-2f45add4.koyeb.app')
 if KOYEB_APP_NAME and KOYEB_ORGANIZATION_ID:
     koyeb_legacy_host = f"{KOYEB_APP_NAME}-{KOYEB_ORGANIZATION_ID}.koyeb.app"
     if koyeb_legacy_host not in ALLOWED_HOSTS:
