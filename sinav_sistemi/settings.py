@@ -10,13 +10,13 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '*-l9dt$58acv58a%!16r92sbne4y@f
 # KOYEB_APP_NAME veya KOYEB_SERVICE_ID gibi bir Koyeb ortam değişkeni varsa DEBUG=False olur.
 # Alternatif olarak, Koyeb'de DJANGO_DEBUG="False" olarak bir ortam değişkeni ayarlayabilirsiniz.
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
-if os.environ.get('KOYEB_APP_NAME'): # Koyeb'in otomatik ayarladığı bir ortam değişkeni
+if os.environ.get('sinav-analiz-sistemi'): # Koyeb'in otomatik ayarladığı bir ortam değişkeni
     DEBUG = False
 
 ALLOWED_HOSTS = []
 
 # Koyeb tarafından sağlanan hostname'i ALLOWED_HOSTS'a ekle
-KOYEB_PUBLIC_HOSTNAME = os.environ.get('KOYEB_PUBLIC_HOSTNAME')
+KOYEB_PUBLIC_HOSTNAME = os.environ.get('vocal-maddy-sozcelyk43-2f45add4.koyeb.app')
 if KOYEB_PUBLIC_HOSTNAME:
     ALLOWED_HOSTS.append(KOYEB_PUBLIC_HOSTNAME)
 
