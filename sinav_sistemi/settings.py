@@ -4,16 +4,28 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# SECRET_KEY'i ortam değişkeninden al. Koyeb'de bunu secret olarak ayarlayacağız.
+# Yerel geliştirme için varsayılan bir değer kullanın.
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-YERELDE_KULLANDIGINIZ_GECICI_BIR_KEY') # YEREL KEYİNİZİ BURAYA YAZIN
 
+# DEBUG modunu ortam değişkeninden al. Koyeb'de 'False' olmalı.
+# KOYEB_APP_NAME veya KOYEB_SERVICE_ID gibi bir Koyeb ortam değişkeni varsa DEBUG=False olur.
+# Veya DJANGO_DEBUG ortam değişkenini Koyeb'de False olarak ayarlayabilirsiniz.
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+if os.environ.get('KOYEB_APP_NAME'): # Koyeb ortamında çalışıyorsa DEBUG'ı False yap
+    DEBUG = False
 
 ALLOWED_HOSTS = []
 
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+# Koyeb tarafından sağlanan hostname'i ALLOWED_HOSTS'a ekle
+KOYEB_PUBLIC_HOSTNAME = os.environ.get('KOYEB_PUBLIC_HOSTNAME')
+if KOYEB_PUBLIC_HOSTNAME:
+    ALLOWED_HOSTS.append(KOYEB_PUBLIC_HOSTNAME)
 
+# Eğer bir custom domain (özel alan adı) ayarlarsanız, onu da buraya ekleyin:
+# ALLOWED_HOSTS.append('www.sizinanalizsiteniz.com')
+
+# Yerel geliştirme için
 if DEBUG:
     ALLOWED_HOSTS.append('127.0.0.1')
     ALLOWED_HOSTS.append('localhost')
@@ -64,7 +76,7 @@ if os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(
             conn_max_age=600,
-            ssl_require=True
+            ssl_require=True # Koyeb PostgreSQL genellikle SSL gerektirir
         )
     }
 else:
@@ -88,8 +100,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [ BASE_DIR / "static", ]
-STATIC_ROOT = BASE_DIR / "staticfiles_live" 
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_live') 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -103,6 +114,3 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True
-    # SECURE_HSTS_SECONDS = 31536000
-    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    # SECURE_HSTS_PRELOAD = True
